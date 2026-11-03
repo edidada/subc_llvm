@@ -22,6 +22,7 @@
 #include "llvm/Target/TargetMachine.h"
 
 #include <llvm/TargetParser/Host.h>
+#include "llvm/Config/llvm-config.h"
 
 using namespace llvm;
 static cl::opt<std::string>
@@ -69,7 +70,15 @@ int main(int argc, char *argv[]) {
 
 //   llvm::outs() << "1>>>  output ir\n";
 //   M->print(llvm::outs(), nullptr);
+#if LLVM_VERSION_MAJOR >= 21
+  if (llvm::Error E = llvm::verifyModule(*M)) {
+    llvm::errs() << "Module verification failed\n";
+    E.log(llvm::errs());
+    llvm::consumeError(std::move(E));
+  }
+#else
   assert(!llvm::verifyModule(*M));
+#endif
 
 #ifdef JIT_TEST
   {
@@ -108,7 +117,11 @@ int main(int argc, char *argv[]) {
 //   llvm::outs() << "\nthe triple: " << T.normalize() << "\n\n";
   /// 2. 查找一个target
   std::string Err;
+#if LLVM_VERSION_MAJOR >= 21
+  const llvm::Target *TG = llvm::TargetRegistry::lookupTarget(T, Err);
+#else
   const llvm::Target *TG = llvm::TargetRegistry::lookupTarget(T.normalize(), Err);
+#endif
   if (!TG) {
     llvm::WithColor::error() << "target lookup failed with error: " << Err << "\n";
     return 0;
@@ -118,13 +131,25 @@ int main(int argc, char *argv[]) {
   auto Machine = std::unique_ptr<llvm::TargetMachine>(
     TG->createTargetMachine(T.normalize(), "generic", "", {}, llvm::Reloc::Model::Static, {}, llvm::CodeGenOptLevel::None));
 
-  M->setTargetTriple(T.normalize());
   M->setDataLayout(Machine->createDataLayout());
+#if LLVM_VERSION_MAJOR >= 21
+  M->setTargetTriple(T);
+#else
+  M->setTargetTriple(T.normalize());
+#endif
 
   /// 4. 对比上面，此时输出会有 data layout信息
   llvm::outs() << "2>>>  add data layout and triple, output ir\n";
   M->print(llvm::outs(), nullptr);
+#if LLVM_VERSION_MAJOR >= 21
+  if (llvm::Error E = llvm::verifyModule(*M)) {
+    llvm::errs() << "Module verification failed\n";
+    E.log(llvm::errs());
+    llvm::consumeError(std::move(E));
+  }
+#else
   assert(!llvm::verifyModule(*M));
+#endif
 
   /// 4. 创建输出
   std::error_code EC;

@@ -842,9 +842,17 @@ llvm::Value * CodeGen::VisitFuncDecl(FuncDecl *decl) {
 
     // verifyFunction(*mFunc);
 
+#if LLVM_VERSION_MAJOR >= 21
+    if (llvm::Error E = verifyModule(*module)) {
+        E.log(llvm::errs());
+        llvm::consumeError(std::move(E));
+        module->print(llvm::outs(), nullptr);
+    }
+#else
     if (verifyModule(*module, &llvm::outs())) {
         module->print(llvm::outs(), nullptr);
     }
+#endif
 
     return nullptr;
 }
@@ -1000,7 +1008,7 @@ llvm::Value * CodeGen::VisitPostMemberDotExpr(PostMemberDotExpr *expr) {
         return irBuilder.CreateLoad(memType, memAddr);
     }else {
         llvm::Value *memAddr = irBuilder.CreateInBoundsGEP(leftType, llvm::dyn_cast<LoadInst>(leftValue)->getPointerOperand(), {zero, zero});
-        llvm::Value *cast = irBuilder.CreateBitCast(memAddr, llvm::PointerType::getUnqual(memType));
+        llvm::Value *cast = irBuilder.CreateBitCast(memAddr, llvm::PointerType::get(memType, 0));
         return irBuilder.CreateLoad(memType, cast);
     }
 }
@@ -1023,7 +1031,7 @@ llvm::Value * CodeGen::VisitPostMemberArrowExpr(PostMemberArrowExpr *expr) {
         return irBuilder.CreateLoad(memType, memAddr);
     }else {
         llvm::Value *memAddr = irBuilder.CreateInBoundsGEP(cLeftPointerType->GetBaseType()->Accept(this), leftValue, {zero, zero});
-        llvm::Value *cast = irBuilder.CreateBitCast(memAddr, llvm::PointerType::getUnqual(memType));
+        llvm::Value *cast = irBuilder.CreateBitCast(memAddr, llvm::PointerType::get(memType, 0));
         return irBuilder.CreateLoad(memType, cast);
     }
 }

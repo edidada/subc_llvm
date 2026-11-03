@@ -54,18 +54,13 @@ jobs:
           cmake -S . -B build -GNinja -DLLVM_DIR="$LLVM_DIR" -DCMAKE_BUILD_RPATH="$LLVM_LIB"
 
       - name: Build
-        run: cmake --build build
+        run: cmake --build build -- -k 0
 
       - name: Test (ctest)
-        env:
-          LD_LIBRARY_PATH: ${{ env.LLVM_LIB }}
-          DYLD_LIBRARY_PATH: ${{ env.LLVM_LIB }}
         run: ctest --test-dir build --output-on-failure
 
       - name: End-to-end run (Linux)
         if: runner.os == 'Linux'
-        env:
-          LD_LIBRARY_PATH: ${{ env.LLVM_LIB }}
         run: |
           set +e
           SUBC=$(find . -name subc -type f -not -path './.git/*' | head -1)
@@ -77,8 +72,6 @@ jobs:
 
       - name: End-to-end run (macOS)
         if: runner.os == 'macOS'
-        env:
-          DYLD_LIBRARY_PATH: ${{ env.LLVM_LIB }}
         run: |
           set +e
           SUBC=$(find . -name subc -type f -not -path './.git/*' | head -1)
