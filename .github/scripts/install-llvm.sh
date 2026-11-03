@@ -34,9 +34,9 @@ LLVM_BIN="$PREFIX/bin"
 echo "LLVM_DIR=${LLVM_DIR}" >> "$GITHUB_ENV"
 echo "LLVM_BIN=${LLVM_BIN}" >> "$GITHUB_ENV"
 echo "${LLVM_BIN}" >> "$GITHUB_PATH"
-if [ "$OS" = "Linux" ]; then
-  echo "LD_LIBRARY_PATH=$PREFIX/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
-else
-  echo "DYLD_LIBRARY_PATH=$PREFIX/lib:${DYLD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
-fi
+# Do NOT export LD_LIBRARY_PATH/DYLD_LIBRARY_PATH globally: on macOS that makes
+# the system cmake/git load conda's incompatible libiconv and abort. The built
+# `subc` already carries an RPATH (CMAKE_BUILD_RPATH) to find libLLVM, so we only
+# expose the lib dir to the steps that actually run subc (ctest / e2e).
+echo "LLVM_LIB=$PREFIX/lib" >> "$GITHUB_ENV"
 echo "::notice::Using LLVM_DIR=${LLVM_DIR}"
