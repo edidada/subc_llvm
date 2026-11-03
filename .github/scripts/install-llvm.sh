@@ -7,17 +7,18 @@ set -euo pipefail
 MAJOR="${1:?usage: install-llvm.sh <llvm-major-version>}"
 OS="$(uname -s)"
 
-MM_HOME="$HOME/micromamba"
-MM="$MM_HOME/bin/micromamba"
 PREFIX="$HOME/llvm-${MAJOR}"
 
 # --- bootstrap micromamba (once per runner) ---
-if [ ! -x "$MM" ]; then
+if ! command -v micromamba >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/micromamba" ]; then
   echo "::group::Bootstrap micromamba"
   curl -L https://micro.mamba.pm/install.sh -o /tmp/mm.sh
-  bash /tmp/mm.sh -b -p "$MM_HOME"
+  bash /tmp/mm.sh -b
   echo "::endgroup::"
 fi
+MM="$HOME/.local/bin/micromamba"
+if [ ! -x "$MM" ]; then MM="$(command -v micromamba || true)"; fi
+[ -x "$MM" ] || { echo "::error::micromamba not found after bootstrap"; exit 1; }
 
 # --- create/use the LLVM env (skip if a cached env already exists) ---
 if [ -f "$PREFIX/lib/cmake/llvm/LLVMConfig.cmake" ]; then
