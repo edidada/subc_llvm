@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 //   llvm::outs() << "\nthe triple: " << T.normalize() << "\n\n";
   /// 2. 查找一个target
   std::string Err;
-#if LLVM_VERSION_MAJOR >= 22
+#if LLVM_VERSION_MAJOR >= 21
   const llvm::Target *TG = llvm::TargetRegistry::lookupTarget(T, Err);
 #else
   const llvm::Target *TG = llvm::TargetRegistry::lookupTarget(T.normalize(), Err);
@@ -130,10 +130,14 @@ int main(int argc, char *argv[]) {
 
   /// 3. 创建target machine
   auto Machine = std::unique_ptr<llvm::TargetMachine>(
+#if LLVM_VERSION_MAJOR >= 21
+    TG->createTargetMachine(T, "generic", "", {}, llvm::Reloc::Model::Static, {}, llvm::CodeGenOptLevel::None));
+#else
     TG->createTargetMachine(T.normalize(), "generic", "", {}, llvm::Reloc::Model::Static, {}, llvm::CodeGenOptLevel::None));
+#endif
 
   M->setDataLayout(Machine->createDataLayout());
-#if LLVM_VERSION_MAJOR >= 22
+#if LLVM_VERSION_MAJOR >= 21
   M->setTargetTriple(T);
 #else
   M->setTargetTriple(T.normalize());
