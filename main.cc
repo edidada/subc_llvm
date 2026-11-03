@@ -23,6 +23,7 @@
 
 #include <llvm/TargetParser/Host.h>
 #include "llvm/Config/llvm-config.h"
+#include "llvm/Support/Error.h"
 
 using namespace llvm;
 static cl::opt<std::string>
@@ -70,7 +71,7 @@ int main(int argc, char *argv[]) {
 
 //   llvm::outs() << "1>>>  output ir\n";
 //   M->print(llvm::outs(), nullptr);
-#if LLVM_VERSION_MAJOR >= 21
+#if LLVM_VERSION_MAJOR >= 22
   if (llvm::Error E = llvm::verifyModule(*M)) {
     llvm::errs() << "Module verification failed\n";
     E.log(llvm::errs());
@@ -117,7 +118,7 @@ int main(int argc, char *argv[]) {
 //   llvm::outs() << "\nthe triple: " << T.normalize() << "\n\n";
   /// 2. 查找一个target
   std::string Err;
-#if LLVM_VERSION_MAJOR >= 21
+#if LLVM_VERSION_MAJOR >= 22
   const llvm::Target *TG = llvm::TargetRegistry::lookupTarget(T, Err);
 #else
   const llvm::Target *TG = llvm::TargetRegistry::lookupTarget(T.normalize(), Err);
@@ -132,7 +133,7 @@ int main(int argc, char *argv[]) {
     TG->createTargetMachine(T.normalize(), "generic", "", {}, llvm::Reloc::Model::Static, {}, llvm::CodeGenOptLevel::None));
 
   M->setDataLayout(Machine->createDataLayout());
-#if LLVM_VERSION_MAJOR >= 21
+#if LLVM_VERSION_MAJOR >= 22
   M->setTargetTriple(T);
 #else
   M->setTargetTriple(T.normalize());
@@ -141,7 +142,7 @@ int main(int argc, char *argv[]) {
   /// 4. 对比上面，此时输出会有 data layout信息
   llvm::outs() << "2>>>  add data layout and triple, output ir\n";
   M->print(llvm::outs(), nullptr);
-#if LLVM_VERSION_MAJOR >= 21
+#if LLVM_VERSION_MAJOR >= 22
   if (llvm::Error E = llvm::verifyModule(*M)) {
     llvm::errs() << "Module verification failed\n";
     E.log(llvm::errs());

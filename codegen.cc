@@ -1,5 +1,6 @@
 #include "codegen.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/Support/Error.h"
 #include "llvm/IR/Function.h"
 #include <cassert>
 
@@ -842,7 +843,7 @@ llvm::Value * CodeGen::VisitFuncDecl(FuncDecl *decl) {
 
     // verifyFunction(*mFunc);
 
-#if LLVM_VERSION_MAJOR >= 21
+#if LLVM_VERSION_MAJOR >= 22
     if (llvm::Error E = verifyModule(*module)) {
         E.log(llvm::errs());
         llvm::consumeError(std::move(E));
