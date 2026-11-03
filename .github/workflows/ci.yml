@@ -49,7 +49,9 @@ jobs:
         run: bash .github/scripts/install-llvm.sh ${{ matrix.llvm }}
 
       - name: Configure
-        run: cmake -S . -B build -GNinja -DLLVM_DIR="$LLVM_DIR"
+        run: |
+          LLVM_LIB="$(dirname "$(dirname "$LLVM_DIR")")/lib"
+          cmake -S . -B build -GNinja -DLLVM_DIR="$LLVM_DIR" -DCMAKE_BUILD_RPATH="$LLVM_LIB"
 
       - name: Build
         run: cmake --build build
