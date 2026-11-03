@@ -15,6 +15,8 @@ if (SUBC_BUILT_STANDALONE)
 
     include(AddLLVM)
 
+    enable_testing()
+
     include_directories( . "${LLVM_BINARY_DIR}/include" "${LLVM_INCLUDE_DIR}")
     add_definitions(${LLVM_DEFINITIONS})
 else()

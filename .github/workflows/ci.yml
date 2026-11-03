@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-run:
+    name: ${{ matrix.os }} / llvm-${{ matrix.llvm }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-22.04
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+          - macos-13
+          - macos-14
+          - macos-15
+        llvm:
+          - 20
+          - 21
+          - 22
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache LLVM (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/cache@v4
+        with:
+          path: ~/llvm-${{ matrix.llvm }}
+          key: llvm-${{ matrix.llvm }}-${{ runner.arch }}
+
+      - name: Install Ninja (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Install Ninja (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja
+
+      - name: Install LLVM ${{ matrix.llvm }}
+        run: bash .github/scripts/install-llvm.sh ${{ matrix.llvm }}
+
+      - name: Configure
+        run: cmake -S . -B build -GNinja -DLLVM_DIR="$LLVM_DIR"
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test (ctest)
+        run: ctest --test-dir build --output-on-failure
+
+      - name: End-to-end run (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          SUBC=$(find . -name subc -type f -not -path './.git/*' | head -1)
+          "$SUBC" demo/expr.txt -o /tmp/out.s
+          gcc /tmp/out.s -o /tmp/out
+          /tmp/out; rc=$?
+          echo "exit code = $rc"
+          test "$rc" -eq 2
+
+      - name: End-to-end run (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          SUBC=$(find . -name subc -type f -not -path './.git/*' | head -1)
+          "$SUBC" demo/expr.txt -o /tmp/out.s
+          as /tmp/out.s -o /tmp/out.o
+          ld /tmp/out.o -lSystem -L "$(xcrun --show-sdk-path -sdk macosx)/usr/lib" -o /tmp/out
+          /tmp/out; rc=$?
+          echo "exit code = $rc"
+          test "$rc" -eq 2
