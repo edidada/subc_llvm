@@ -12,6 +12,8 @@ jobs:
   build-and-run:
     name: ${{ matrix.os }} / llvm-${{ matrix.llvm }}
     runs-on: ${{ matrix.os }}
+    env:
+      GH_TOKEN: ${{ github.token }}
     strategy:
       fail-fast: false
       matrix:
@@ -29,12 +31,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache LLVM (macOS)
-        if: runner.os == 'macOS'
+      - name: Cache LLVM
         uses: actions/cache@v4
         with:
           path: ~/llvm-${{ matrix.llvm }}
-          key: llvm-${{ matrix.llvm }}-${{ runner.arch }}
+          key: ${{ runner.os }}-llvm-${{ matrix.llvm }}-${{ runner.arch }}
 
       - name: Install Ninja (Linux)
         if: runner.os == 'Linux'
