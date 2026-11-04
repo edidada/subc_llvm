@@ -5,7 +5,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/ADT/DenseMap.h"
-#include "llvm/Support/Host.h"
+#include "llvm/TargetParser/Host.h"
 
 class CodeGen : public Visitor, public TypeVisitor {
 public:
