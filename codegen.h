@@ -6,12 +6,44 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/TargetParser/Host.h"
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Config/llvm-config.h"
 
 class CodeGen : public Visitor, public TypeVisitor {
 public:
     CodeGen(std::shared_ptr<Program> p) {
         module = std::make_unique<llvm::Module>(p->fileName, context);
-        module->setTargetTriple(llvm::sys::getDefaultTargetTriple());
+        // Configure the host target triple + DataLayout *before* emitting IR so
+        // the IRBuilder produces layout-aware code. An otherwise-empty DataLayout
+        // makes MCJIT emit mis-aligned code that segfaults on x86-64 Linux under
+        // LLVM 21/22. (main.cc overrides these with the real target afterwards.)
+        std::string TT = llvm::sys::getDefaultTargetTriple();
+#if LLVM_VERSION_MAJOR >= 21
+        llvm::Triple HostTriple(TT);
+        module->setTargetTriple(HostTriple);
+#else
+        module->setTargetTriple(TT);
+#endif
+        std::string Err;
+        const llvm::Target *TheTarget = llvm::TargetRegistry::lookupTarget(
+#if LLVM_VERSION_MAJOR >= 21
+            HostTriple
+#else
+            TT
+#endif
+            , Err);
+        if (TheTarget) {
+            std::unique_ptr<llvm::TargetMachine> TM(TheTarget->createTargetMachine(
+#if LLVM_VERSION_MAJOR >= 21
+                HostTriple
+#else
+                TT
+#endif
+                , "generic", "", {}, llvm::Reloc::Model::Static,
+                {}, llvm::CodeGenOptLevel::None));
+            module->setDataLayout(TM->createDataLayout());
+        }
         VisitProgram(p.get());
     }
 
