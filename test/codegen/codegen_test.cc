@@ -37,14 +37,12 @@ bool TestProgramUseJit(llvm::StringRef content, int expectValue) {
         llvm::EngineBuilder builder(std::move(module));
         std::string error;
         auto ptr = std::make_unique<llvm::SectionMemoryManager>();
-        auto ref = ptr.get();
         std::unique_ptr<llvm::ExecutionEngine> ee(
             builder.setErrorStr(&error)
                 .setEngineKind(llvm::EngineKind::JIT)
                 .setOptLevel(llvm::CodeGenOptLevel::None)
-                .setSymbolResolver(std::move(ptr))
+                .setMemoryManager(std::move(ptr))
                 .create());
-        ref->finalizeMemory(&error);
 
         void *addr = (void *)ee->getFunctionAddress("main");
         int res = ((int (*)())addr)();

@@ -71,15 +71,7 @@ int main(int argc, char *argv[]) {
 
 //   llvm::outs() << "1>>>  output ir\n";
 //   M->print(llvm::outs(), nullptr);
-#if LLVM_VERSION_MAJOR >= 22
-  if (llvm::Error E = llvm::verifyModule(*M)) {
-    llvm::errs() << "Module verification failed\n";
-    E.log(llvm::errs());
-    llvm::consumeError(std::move(E));
-  }
-#else
   assert(!llvm::verifyModule(*M));
-#endif
 
 #ifdef JIT_TEST
   {
@@ -146,15 +138,7 @@ int main(int argc, char *argv[]) {
   /// 4. 对比上面，此时输出会有 data layout信息
   llvm::outs() << "2>>>  add data layout and triple, output ir\n";
   M->print(llvm::outs(), nullptr);
-#if LLVM_VERSION_MAJOR >= 22
-  if (llvm::Error E = llvm::verifyModule(*M)) {
-    llvm::errs() << "Module verification failed\n";
-    E.log(llvm::errs());
-    llvm::consumeError(std::move(E));
-  }
-#else
   assert(!llvm::verifyModule(*M));
-#endif
 
   /// 4. 创建输出
   std::error_code EC;

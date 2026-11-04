@@ -843,17 +843,9 @@ llvm::Value * CodeGen::VisitFuncDecl(FuncDecl *decl) {
 
     // verifyFunction(*mFunc);
 
-#if LLVM_VERSION_MAJOR >= 22
-    if (llvm::Error E = verifyModule(*module)) {
-        E.log(llvm::errs());
-        llvm::consumeError(std::move(E));
+    if (verifyModule(*module)) {
         module->print(llvm::outs(), nullptr);
     }
-#else
-    if (verifyModule(*module, &llvm::outs())) {
-        module->print(llvm::outs(), nullptr);
-    }
-#endif
 
     return nullptr;
 }
