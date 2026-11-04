@@ -5,11 +5,13 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/ADT/DenseMap.h"
+#include "llvm/Support/Host.h"
 
 class CodeGen : public Visitor, public TypeVisitor {
 public:
     CodeGen(std::shared_ptr<Program> p) {
         module = std::make_unique<llvm::Module>(p->fileName, context);
+        module->setTargetTriple(llvm::sys::getDefaultTargetTriple());
         VisitProgram(p.get());
     }
 
