@@ -5,7 +5,7 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Config/llvm-config.h"
-#include "llvm/Support/TargetRegistry.h"
+#include "llvm/MC/TargetRegistry.h"
 #include "llvm/Target/TargetMachine.h"
 #include "lexer.h"
 #include "parser.h"

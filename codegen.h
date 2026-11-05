@@ -6,7 +6,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/TargetParser/Host.h"
-#include "llvm/Support/TargetRegistry.h"
+#include "llvm/MC/TargetRegistry.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Config/llvm-config.h"
 
